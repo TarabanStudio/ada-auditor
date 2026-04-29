@@ -240,6 +240,12 @@ export default function ADAAgent() {
       try { const xml = await serverFetch(sUrl); const found = await extractUrlsFromSitemap(xml, baseHost); if (found.length > 0) { pageUrls = found; break; } } catch { continue; }
     }
     if (pageUrls.length === 0) { setStage("No sitemap — auditing homepage…"); pageUrls = [cleanUrl]; }
+    // Filter out Squarespace internal pages and non-content URLs
+    const skipPatterns = ["divider", "quote-sonora", "sonora", "light-life", "living-book", "resplendent", "folder", "config", "cart", "account", "search"];
+    pageUrls = pageUrls.filter(u => {
+      const path = u.toLowerCase();
+      return !skipPatterns.some(p => path.includes(p));
+    });
     pageUrls = pageUrls.slice(0, 10);
     setProgress({ current: 0, total: pageUrls.length });
     const results = [];
