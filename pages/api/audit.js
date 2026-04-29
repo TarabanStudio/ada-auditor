@@ -16,17 +16,19 @@ Analyze the HTML for these specific issues:
 11. Tables: Tables missing caption or th scope attributes
 12. Color contrast: Any inline styles suggesting poor contrast
 
-Respond ONLY with a valid JSON object. No markdown, no backticks, no explanation. Use this exact structure:
+Be thorough. Most real websites have multiple violations. If you find none, double-check your analysis.
+
+Respond ONLY with a valid JSON object. No markdown, no backticks, no explanation before or after. Use this exact structure:
 {
-  "score": <number 0-100>,
+  "score": <number 0-100, where 100 is perfect and most sites score 40-80>,
   "severity": "<critical|high|moderate|low>",
-  "summary": "<2-3 sentence plain-language summary>",
+  "summary": "<2-3 sentence plain-language summary of what was found>",
   "violations": [
     {
       "id": "<short_id>",
       "category": "<category name>",
       "wcag": "<e.g. 1.1.1>",
-      "issue": "<clear description>",
+      "issue": "<clear description of the problem>",
       "impact": "<critical|serious|moderate|minor>",
       "example": "<actual HTML snippet or 'Multiple instances found'>",
       "fix": "<brief fix description>"
@@ -56,16 +58,35 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 1500,
+        max_tokens: 4000,
         system: AUDIT_SYSTEM_PROMPT,
-        messages: [{ role: "user", content: `Audit this HTML from "${label || "Unknown page"}":\n\n${html.slice(0, 15000)}` }],
+        messages: [{ role: "user", content: "Audit this HTML from \"" + (label || "Unknown page") + "\":\n\n" + html.slice(0, 20000) }],
       }),
     });
 
+    if (!response.ok) {
+      const errText = await response.text();
+      return res.status(502).json({ error: "Claude API error: " + response.status + " " + errText });
+    }
+
     const data = await response.json();
+
+    if (data.error) {
+      return res.status(502).json({ error: data.error.message || "Claude returned an error" });
+    }
+
     const raw = data.content?.find(b => b.type === "text")?.text || "";
-    const clean = raw.replace(/```json|```/g, "").trim();
-    const result = JSON.parse(clean);
+    if (!raw) {
+      return res.status(502).json({ error: "Empty response from Claude" });
+    }
+
+    // Extract JSON even if there's extra text around it
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return res.status(502).json({ error: "Could not parse audit response" });
+    }
+
+    const result = JSON.parse(jsonMatch[0]);
     return res.status(200).json(result);
   } catch (err) {
     return res.status(500).json({ error: err.message || "Audit failed" });
