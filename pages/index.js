@@ -307,7 +307,7 @@ export default function ADAAgent() {
 
         {/* Intro */}
         <div style={{ textAlign: "center", padding: "48px 20px 40px" }}>
-          <p style={{ fontSize: 20, color: C.text, lineHeight: 1.85, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 300, maxWidth: 640, margin: "0 auto" }}>
+          <p style={{ fontSize: 20, color: C.text, lineHeight: 1.85, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600, maxWidth: 640, margin: "0 auto" }}>
             Every website deserves to be experienced by everyone. Enter any URL below to receive a free accessibility score and a page-by-page breakdown of WCAG 2.1 violations.
           </p>
         </div>
@@ -469,7 +469,7 @@ export default function ADAAgent() {
             <span style={{ fontSize: 12, color: C.goldDark, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 700 }}>Ready to Fix What We Find?</span>
             <Star size={16} color={C.goldDark} />
           </div>
-          <p style={{ textAlign: "center", fontSize: 20, color: C.text, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 300, lineHeight: 1.85, maxWidth: 560, margin: "0 auto 40px" }}>
+          <p style={{ textAlign: "center", fontSize: 20, color: C.text, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600, lineHeight: 1.85, maxWidth: 560, margin: "0 auto 40px" }}>
             Accessibility work is meaningful — it makes the web more welcoming to everyone. If your audit revealed violations, we offer two ways to help.
           </p>
 
