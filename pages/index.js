@@ -288,7 +288,7 @@ export default function ADAAgent() {
               <label style={{ display: "block", fontSize: 11, color: "#9ca3af", marginBottom: 8, letterSpacing: "0.08em", textTransform: "uppercase" }}>Website URL</label>
               <div style={{ display: "flex", gap: 10 }}>
                 <input value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => e.key === "Enter" && !loading && runFullAudit()}
-                  placeholder="e.g. alachuaconservationtrust.org"
+                  placeholder="e.g. yourbusiness.com"
                   style={{ flex: 1, padding: "11px 14px", borderRadius: 8, border: "1.5px solid #d1c9b8", fontSize: 14, fontFamily: "Georgia, serif", outline: "none", background: "#faf9f7", color: "#111" }} />
                 {!loading
                   ? <button onClick={runFullAudit} disabled={!canRun} style={{ padding: "11px 18px", borderRadius: 8, border: "none", cursor: !canRun ? "not-allowed" : "pointer", background: !canRun ? "#9ca3af" : "#1a1a2e", color: "#fff", fontSize: 13, fontWeight: 600, fontFamily: "Georgia, serif", whiteSpace: "nowrap" }}>Audit Full Site</button>
