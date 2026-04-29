@@ -231,7 +231,7 @@ export default function ADAAgent() {
       if (abortRef.current) break;
       const pageUrl = pageUrls[i];
       const label = getPageLabel(pageUrl);
-      setStage(`Auditing: ${label} (${i + 1}/${pageUrls.length})`);
+      setStage("Auditing: " + label + " (" + (i + 1) + "/" + pageUrls.length + ")");
       setProgress({ current: i + 1, total: pageUrls.length });
       let pageResult = null, pageError = null;
       try {
@@ -368,4 +368,4 @@ export default function ADAAgent() {
       </div>
     </div>
   );
-}i
+}
