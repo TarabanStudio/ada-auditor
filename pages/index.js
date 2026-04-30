@@ -68,10 +68,27 @@ function ScoreRing({ score, size = 90 }) {
   );
 }
 
-function ViolationCard({ v, expanded, onToggle }) {
+// Groups violations by category and deduplicates
+function groupViolations(violations) {
+  const grouped = {};
+  violations.forEach(v => {
+    const key = v.category + "_" + v.impact;
+    if (!grouped[key]) {
+      grouped[key] = { ...v, count: 1 };
+    } else {
+      grouped[key].count++;
+    }
+  });
+  return Object.values(grouped);
+}
+
+function ViolationCard({ v }) {
+  const [expanded, setExpanded] = useState(false);
   const cfg = impactConfig[v.impact] || impactConfig.minor;
+  const isSkipNav = v.category && v.category.toLowerCase().includes("skip");
+  
   return (
-    <div onClick={onToggle} style={{
+    <div onClick={() => setExpanded(o => !o)} style={{
       border: "1px solid " + (expanded ? cfg.border : C.border),
       borderRadius: 3, marginBottom: 8, cursor: "pointer",
       background: expanded ? cfg.bg : C.white,
@@ -80,8 +97,18 @@ function ViolationCard({ v, expanded, onToggle }) {
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px" }}>
         <div style={{ width: 9, height: 9, borderRadius: "50%", background: cfg.dot, flexShrink: 0 }} />
         <div style={{ flex: 1 }}>
-          <span style={{ fontWeight: 600, fontSize: 16, color: C.text, fontFamily: "Georgia, serif" }}>{v.category}</span>
-          <span style={{ marginLeft: 10, fontSize: 12, padding: "2px 8px", borderRadius: 2, background: cfg.bg, color: cfg.text, border: "1px solid " + cfg.border, fontFamily: "monospace" }}>WCAG {v.wcag}</span>
+          <span style={{ fontWeight: 600, fontSize: 16, color: C.text, fontFamily: "Georgia, serif" }}>
+            {v.category}
+            {v.count > 1 ? " (" + v.count + " instances)" : ""}
+          </span>
+          <span style={{ marginLeft: 10, fontSize: 12, padding: "2px 8px", borderRadius: 2, background: cfg.bg, color: cfg.text, border: "1px solid " + cfg.border, fontFamily: "monospace" }}>
+            WCAG {v.wcag}
+          </span>
+          {isSkipNav && (
+            <span style={{ marginLeft: 8, fontSize: 11, padding: "2px 8px", borderRadius: 2, background: "#f0f0ff", color: "#4444aa", border: "1px solid #aaaadd" }}>
+              Platform limitation
+            </span>
+          )}
         </div>
         <span style={{ fontSize: 12, color: cfg.text, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>{v.impact}</span>
         <span style={{ color: C.textLight, fontSize: 14, marginLeft: 8 }}>{expanded ? "▲" : "▼"}</span>
@@ -89,11 +116,13 @@ function ViolationCard({ v, expanded, onToggle }) {
       {expanded && (
         <div style={{ padding: "0 16px 16px", borderTop: "1px solid " + cfg.border }}>
           <p style={{ margin: "12px 0 10px", fontSize: 16, color: C.text, lineHeight: 1.7, fontFamily: "Georgia, serif" }}>{v.issue}</p>
-          {v.example && v.example !== "N/A" && (
-            <pre style={{ background: "#1c2333", color: "#c8d8e8", padding: "12px 14px", borderRadius: 3, fontSize: 13, overflowX: "auto", margin: "10px 0", fontFamily: "monospace", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-all" }}>{v.example}</pre>
+          {isSkipNav && (
+            <div style={{ background: "#f0f0ff", border: "1px solid #aaaadd", borderRadius: 3, padding: "10px 14px", fontSize: 16, color: "#333366", marginBottom: 10, fontFamily: "Georgia, serif" }}>
+              <strong>Note:</strong> Squarespace includes a skip navigation link by default, but it may not function correctly in all templates due to platform limitations. Custom code injection may be required for full compliance.
+            </div>
           )}
-          <div style={{ background: "#f0f8f4", border: "1px solid #90d8b0", borderRadius: 3, padding: "10px 14px", fontSize: 16, color: "#1a6040", marginTop: 10, fontFamily: "Georgia, serif" }}>
-            <strong>Remedy:</strong> {v.fix}
+          <div style={{ background: "#fff8f0", border: "1px solid " + C.border, borderRadius: 3, padding: "10px 14px", fontSize: 16, color: C.text, fontFamily: "Georgia, serif" }}>
+            <strong>🔒 Full remediation details available in the paid report.</strong> Contact us to receive a complete page-by-page fix guide.
           </div>
         </div>
       )}
@@ -103,29 +132,31 @@ function ViolationCard({ v, expanded, onToggle }) {
 
 function PageResult({ page }) {
   const [open, setOpen] = useState(false);
-  const [expandedV, setExpandedV] = useState(null);
   const opp = oppConfig[page.result?.opportunityScore] || oppConfig.low;
+  const grouped = page.result?.violations ? groupViolations(page.result.violations) : [];
+
   return (
     <div style={{ border: "1px solid " + C.border, borderRadius: 3, marginBottom: 12, background: C.white, overflow: "hidden" }}>
       <div onClick={() => setOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 18, padding: "16px 20px", cursor: "pointer" }}>
         <ScoreRing score={page.result?.score ?? 0} size={64} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 18, fontWeight: 600, color: C.text, fontFamily: "Georgia, serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{page.label}</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: "Georgia, serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{page.label}</div>
           <div style={{ fontSize: 14, color: C.textLight, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{page.url}</div>
           <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
             <span style={{ padding: "4px 10px", borderRadius: 2, fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", background: opp.bg, color: opp.color }}>{opp.label}</span>
-            <span style={{ padding: "4px 10px", borderRadius: 2, fontSize: 12, background: C.creamDark, color: C.textLight }}>{page.result?.violations?.length || 0} violations</span>
+            <span style={{ padding: "4px 10px", borderRadius: 2, fontSize: 12, background: C.creamDark, color: C.textLight }}>{grouped.length} issue types found</span>
             {page.result?.pdfCount > 0 && <span style={{ padding: "4px 10px", borderRadius: 2, fontSize: 12, background: "#fff8f0", color: "#8b4a12" }}>{page.result.pdfCount} PDFs</span>}
           </div>
         </div>
         <span style={{ color: C.textLight, fontSize: 16, flexShrink: 0 }}>{open ? "▲" : "▼"}</span>
       </div>
+
       {open && page.result && (
         <div style={{ borderTop: "1px solid " + C.border, padding: "18px 20px", background: C.cream }}>
           <p style={{ margin: "0 0 16px", fontSize: 16, color: C.text, lineHeight: 1.75, fontFamily: "Georgia, serif" }}>{page.result.summary}</p>
-          {page.result.violations?.length === 0
+          {grouped.length === 0
             ? <div style={{ padding: "12px 16px", background: "#f0f8f4", borderRadius: 3, fontSize: 16, color: "#1a6040", fontFamily: "Georgia, serif" }}>No violations found on this page.</div>
-            : page.result.violations.map((v, i) => <ViolationCard key={i} v={v} expanded={expandedV === i} onToggle={() => setExpandedV(expandedV === i ? null : i)} />)
+            : grouped.map((v, i) => <ViolationCard key={i} v={v} />)
           }
           {page.result.pitchAngle && (
             <div style={{ marginTop: 16, padding: "16px 18px", background: C.white, borderLeft: "3px solid " + C.gold, fontSize: 16, color: C.text, fontStyle: "italic", lineHeight: 1.8, fontFamily: "Georgia, serif" }}>
@@ -148,7 +179,7 @@ function AccordionItem({ question, children }) {
   return (
     <div style={{ borderBottom: "1px solid " + C.border }}>
       <div onClick={() => setOpen(o => !o)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "22px 0", cursor: "pointer" }}>
-        <span style={{ fontSize: 20, color: C.blue, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600, letterSpacing: "0.02em" }}>{question}</span>
+        <span style={{ fontSize: 20, color: C.blue, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600 }}>{question}</span>
         <span style={{ fontSize: 22, color: C.textLight, marginLeft: 20, flexShrink: 0 }}>{open ? "−" : "+"}</span>
       </div>
       {open && (
@@ -240,12 +271,8 @@ export default function ADAAgent() {
       try { const xml = await serverFetch(sUrl); const found = await extractUrlsFromSitemap(xml, baseHost); if (found.length > 0) { pageUrls = found; break; } } catch { continue; }
     }
     if (pageUrls.length === 0) { setStage("No sitemap — auditing homepage…"); pageUrls = [cleanUrl]; }
-    // Filter out Squarespace internal pages and non-content URLs
-    const skipPatterns = ["divider", "quote-sonora", "sonora", "light-life", "living-book", "resplendent", "folder", "config", "cart", "account", "search"];
-    pageUrls = pageUrls.filter(u => {
-      const path = u.toLowerCase();
-      return !skipPatterns.some(p => path.includes(p));
-    });
+    const skipPatterns = ["divider", "sonora", "light-life", "living-book", "resplendent", "folder", "config", "cart", "account", "search"];
+    pageUrls = pageUrls.filter(u => !skipPatterns.some(p => u.toLowerCase().includes(p)));
     pageUrls = pageUrls.slice(0, 10);
     setProgress({ current: 0, total: pageUrls.length });
     const results = [];
@@ -266,7 +293,7 @@ export default function ADAAgent() {
       setTotalPdfs(scored.reduce((s, r) => s + (r.result.pdfCount || 0), 0));
       const allV = scored.flatMap(r => r.result.violations || []);
       const topIssues = [...new Set(allV.map(v => v.category))].slice(0, 3).join(", ");
-      setCombinedPitch(scored.map(r => r.result.pitchAngle).filter(Boolean)[0] || "This site has " + allV.length + " accessibility violations across " + scored.length + " pages, including issues with " + (topIssues || "multiple WCAG criteria") + ".");
+      setCombinedPitch(scored.map(r => r.result.pitchAngle).filter(Boolean)[0] || "This site has accessibility violations across " + scored.length + " pages, including issues with " + (topIssues || "multiple WCAG criteria") + ".");
     }
     setLoading(false); setStage("");
   }
@@ -294,6 +321,7 @@ export default function ADAAgent() {
         * { box-sizing: border-box; }
         ::placeholder { color: #8a9ea3; font-size: 16px; }
         a { color: inherit; }
+        body { font-size: 16px; }
       `}</style>
 
       {/* Header */}
@@ -304,16 +332,16 @@ export default function ADAAgent() {
         <h1 style={{ margin: "0 0 12px", fontSize: 48, color: C.white, fontWeight: 600, fontFamily: "'Cormorant Garamond', Georgia, serif", letterSpacing: "0.06em", lineHeight: 1.1 }}>
           ADA Accessibility Audit
         </h1>
-        <p style={{ margin: 0, color: "rgba(255,255,255,0.7)", fontSize: 16, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+        <p style={{ margin: 0, color: "rgba(255,255,255,0.7)", fontSize: 18, letterSpacing: "0.08em", textTransform: "uppercase" }}>
           Sitemap Crawl &nbsp;·&nbsp; Page-by-Page Analysis &nbsp;·&nbsp; Compliance Report
         </p>
       </div>
 
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 28px" }}>
 
-        {/* Intro */}
+        {/* Bold intro */}
         <div style={{ textAlign: "center", padding: "48px 20px 40px" }}>
-          <p style={{ fontSize: 20, color: C.text, lineHeight: 1.85, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600, maxWidth: 640, margin: "0 auto" }}>
+          <p style={{ fontSize: 22, color: C.text, lineHeight: 1.85, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600, maxWidth: 680, margin: "0 auto" }}>
             Every website deserves to be experienced by everyone. Enter any URL below to receive a free accessibility score and a page-by-page breakdown of WCAG 2.1 violations.
           </p>
         </div>
@@ -325,36 +353,36 @@ export default function ADAAgent() {
               <button key={id} onClick={() => { setMode(id); resetResults(); }} style={{
                 padding: "10px 22px", border: "none", borderBottom: mode === id ? "2px solid " + C.blue : "2px solid transparent",
                 background: "none", color: mode === id ? C.blue : C.textLight,
-                fontSize: 14, fontFamily: "Georgia, serif", cursor: "pointer",
-                fontWeight: mode === id ? 700 : 400, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: -1, transition: "all 0.2s",
+                fontSize: 16, fontFamily: "Georgia, serif", cursor: "pointer",
+                fontWeight: mode === id ? 700 : 400, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: -1,
               }}>{label}</button>
             ))}
           </div>
 
           {mode === "url" ? (
             <>
-              <label style={{ display: "block", fontSize: 14, color: C.textLight, marginBottom: 10, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 700 }}>Website URL</label>
+              <label style={{ display: "block", fontSize: 14, color: C.textLight, marginBottom: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>Website URL</label>
               <div style={{ display: "flex", gap: 12 }}>
                 <input value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => e.key === "Enter" && !loading && runFullAudit()} placeholder="e.g. yourbusiness.com"
                   style={{ flex: 1, padding: "14px 16px", border: "1px solid " + C.border, fontSize: 16, fontFamily: "Georgia, serif", outline: "none", background: C.cream, color: C.text, borderRadius: 2 }} />
                 {!loading
-                  ? <button onClick={runFullAudit} disabled={!canRun} style={{ padding: "14px 28px", border: "none", cursor: !canRun ? "not-allowed" : "pointer", background: !canRun ? C.textLight : C.blue, color: C.white, fontSize: 16, fontFamily: "Georgia, serif", whiteSpace: "nowrap", letterSpacing: "0.08em", textTransform: "uppercase", borderRadius: 2, fontWeight: 700 }}>Audit Site</button>
-                  : <button onClick={() => { abortRef.current = true; setLoading(false); }} style={{ padding: "14px 28px", border: "none", cursor: "pointer", background: "#cc2222", color: C.white, fontSize: 16, fontFamily: "Georgia, serif", letterSpacing: "0.08em", textTransform: "uppercase", borderRadius: 2, fontWeight: 700 }}>Stop</button>
+                  ? <button onClick={runFullAudit} disabled={!canRun} style={{ padding: "14px 28px", border: "none", cursor: !canRun ? "not-allowed" : "pointer", background: !canRun ? C.textLight : C.blue, color: C.white, fontSize: 16, fontFamily: "Georgia, serif", whiteSpace: "nowrap", letterSpacing: "0.06em", textTransform: "uppercase", borderRadius: 2, fontWeight: 700 }}>Audit Site</button>
+                  : <button onClick={() => { abortRef.current = true; setLoading(false); }} style={{ padding: "14px 28px", border: "none", cursor: "pointer", background: "#cc2222", color: C.white, fontSize: 16, fontFamily: "Georgia, serif", letterSpacing: "0.06em", textTransform: "uppercase", borderRadius: 2, fontWeight: 700 }}>Stop</button>
                 }
               </div>
             </>
           ) : (
             <>
-              <label style={{ display: "block", fontSize: 14, color: C.textLight, marginBottom: 10, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 700 }}>Page Name (optional)</label>
+              <label style={{ display: "block", fontSize: 14, color: C.textLight, marginBottom: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>Page Name (optional)</label>
               <input value={pasteLabel} onChange={e => setPasteLabel(e.target.value)} placeholder="e.g. Home, About, Contact"
                 style={{ width: "100%", padding: "12px 14px", border: "1px solid " + C.border, marginBottom: 18, fontSize: 16, fontFamily: "Georgia, serif", outline: "none", background: C.cream, color: C.text, borderRadius: 2 }} />
-              <label style={{ display: "block", fontSize: 14, color: C.textLight, marginBottom: 10, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 700 }}>Paste Page Source HTML</label>
+              <label style={{ display: "block", fontSize: 14, color: C.textLight, marginBottom: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>Paste Page Source HTML</label>
               <p style={{ fontSize: 16, color: C.textLight, marginBottom: 12, lineHeight: 1.7 }}>
                 On iPhone (Chrome): type <code style={{ background: C.creamDark, padding: "2px 6px", borderRadius: 2, fontSize: 14 }}>view-source:</code> before the URL. On desktop: right-click → View Page Source → Select All → Copy.
               </p>
               <textarea value={pastedHtml} onChange={e => setPastedHtml(e.target.value)} placeholder="Paste HTML source here…" rows={6}
                 style={{ width: "100%", padding: "12px 14px", border: "1px solid " + C.border, fontSize: 14, fontFamily: "monospace", outline: "none", background: C.cream, color: C.text, resize: "vertical", borderRadius: 2 }} />
-              <button onClick={runPasteAudit} disabled={loading || !canRun} style={{ marginTop: 14, padding: "14px 28px", border: "none", cursor: loading || !canRun ? "not-allowed" : "pointer", background: loading || !canRun ? C.textLight : C.blue, color: C.white, fontSize: 16, fontFamily: "Georgia, serif", letterSpacing: "0.08em", textTransform: "uppercase", borderRadius: 2, fontWeight: 700 }}>
+              <button onClick={runPasteAudit} disabled={loading || !canRun} style={{ marginTop: 14, padding: "14px 28px", border: "none", cursor: loading || !canRun ? "not-allowed" : "pointer", background: loading || !canRun ? C.textLight : C.blue, color: C.white, fontSize: 16, fontFamily: "Georgia, serif", letterSpacing: "0.06em", textTransform: "uppercase", borderRadius: 2, fontWeight: 700 }}>
                 {loading ? "Analyzing…" : "Audit This Page"}
               </button>
             </>
@@ -387,8 +415,8 @@ export default function ADAAgent() {
               <div style={{ fontSize: 12, color: C.gold, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8, fontWeight: 700 }}>{pages.length > 1 ? "Overall Site Score" : "Page Score"}</div>
               <div style={{ fontSize: 26, fontWeight: 300, color: C.white, marginBottom: 10, fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{pages.length} page{pages.length > 1 ? "s" : ""} audited</div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <span style={{ padding: "4px 12px", fontSize: 14, background: "rgba(255,255,255,0.15)", color: C.white }}>{pages.reduce((s, p) => s + (p.result?.violations?.length || 0), 0)} violations found</span>
-                {totalPdfs > 0 && <span style={{ padding: "4px 12px", fontSize: 14, background: "rgba(232,201,106,0.2)", color: C.gold, fontWeight: 700 }}>{totalPdfs} PDF{totalPdfs > 1 ? "s" : ""} detected</span>}
+                <span style={{ padding: "4px 12px", fontSize: 16, background: "rgba(255,255,255,0.15)", color: C.white }}>{pages.reduce((s, p) => s + (p.result?.violations?.length || 0), 0)} violations found</span>
+                {totalPdfs > 0 && <span style={{ padding: "4px 12px", fontSize: 16, background: "rgba(232,201,106,0.2)", color: C.gold, fontWeight: 700 }}>{totalPdfs} PDF{totalPdfs > 1 ? "s" : ""} detected</span>}
               </div>
             </div>
           </div>
@@ -400,7 +428,7 @@ export default function ADAAgent() {
             <div style={{ fontSize: 12, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 14, fontWeight: 700 }}>Outreach Pitch</div>
             <blockquote style={{ margin: "0 0 16px", padding: "16px 20px", background: C.cream, borderLeft: "3px solid " + C.gold, fontSize: 18, color: C.text, lineHeight: 1.85, fontStyle: "italic", fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 300 }}>"{combinedPitch}"</blockquote>
             <button onClick={() => { navigator.clipboard.writeText(combinedPitch); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-              style={{ padding: "10px 22px", border: "1px solid " + C.blue, background: copied ? C.blue : C.white, color: copied ? C.white : C.blue, fontSize: 14, fontFamily: "Georgia, serif", cursor: "pointer", letterSpacing: "0.1em", textTransform: "uppercase", borderRadius: 2, transition: "all 0.2s", fontWeight: 700 }}>
+              style={{ padding: "10px 22px", border: "1px solid " + C.blue, background: copied ? C.blue : C.white, color: copied ? C.white : C.blue, fontSize: 16, fontFamily: "Georgia, serif", cursor: "pointer", letterSpacing: "0.08em", textTransform: "uppercase", borderRadius: 2, transition: "all 0.2s", fontWeight: 700 }}>
               {copied ? "✓ Copied" : "Copy Pitch"}
             </button>
           </div>
@@ -449,19 +477,19 @@ export default function ADAAgent() {
         <div style={{ background: C.blue, padding: "48px 40px", marginBottom: 2 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 20 }}>
             <Star size={16} color={C.gold} />
-            <span style={{ fontSize: 12, color: C.gold, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 700 }}>Audit Coverage</span>
+            <span style={{ fontSize: 14, color: C.gold, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 700 }}>Audit Coverage</span>
             <Star size={16} color={C.gold} />
           </div>
           <h2 style={{ fontSize: 36, fontWeight: 600, color: C.white, fontFamily: "'Cormorant Garamond', Georgia, serif", letterSpacing: "0.04em", textAlign: "center", marginBottom: 12 }}>
             What This Audit Checks
           </h2>
-          <p style={{ textAlign: "center", color: "rgba(255,255,255,0.65)", fontSize: 16, marginBottom: 36, lineHeight: 1.6 }}>
+          <p style={{ textAlign: "center", color: "rgba(255,255,255,0.65)", fontSize: 18, marginBottom: 36, lineHeight: 1.6 }}>
             Every page is scanned against WCAG 2.1 criteria across eight categories
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 18 }}>
             {auditCategories.map((cat, i) => (
               <div key={i} style={{ background: "rgba(255,255,255,0.08)", padding: "20px 22px", borderLeft: "3px solid " + C.gold }}>
-                <div style={{ fontSize: 18, fontWeight: 600, color: C.white, fontFamily: "Georgia, serif", marginBottom: 8 }}>{cat.title}</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: C.white, fontFamily: "Georgia, serif", marginBottom: 8 }}>{cat.title}</div>
                 <div style={{ fontSize: 16, color: "rgba(255,255,255,0.65)", lineHeight: 1.7 }}>{cat.desc}</div>
               </div>
             ))}
@@ -472,10 +500,10 @@ export default function ADAAgent() {
         <div style={{ background: C.creamDark, padding: "48px 40px", marginBottom: 48 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 20 }}>
             <Star size={16} color={C.goldDark} />
-            <span style={{ fontSize: 12, color: C.goldDark, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 700 }}>Ready to Fix What We Find?</span>
+            <span style={{ fontSize: 14, color: C.goldDark, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 700 }}>Ready to Fix What We Find?</span>
             <Star size={16} color={C.goldDark} />
           </div>
-          <p style={{ textAlign: "center", fontSize: 20, color: C.text, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600, lineHeight: 1.85, maxWidth: 560, margin: "0 auto 40px" }}>
+          <p style={{ textAlign: "center", fontSize: 22, color: C.text, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600, lineHeight: 1.85, maxWidth: 560, margin: "0 auto 40px" }}>
             Accessibility work is meaningful — it makes the web more welcoming to everyone. If your audit revealed violations, we offer two ways to help.
           </p>
 
@@ -501,7 +529,7 @@ export default function ADAAgent() {
                 <h3 style={{ fontSize: 24, fontWeight: 600, color: C.blue, fontFamily: "'Cormorant Garamond', Georgia, serif", marginBottom: 14 }}>{card.title}</h3>
                 <p style={{ fontSize: 16, color: C.text, lineHeight: 1.8, marginBottom: 0, flex: 1 }}>{card.body}</p>
                 <div style={{ marginTop: 28 }}>
-                  <a href={"mailto:TarabanStudio@gmail.com?subject=" + card.subject} style={{ display: "inline-block", padding: "14px 28px", background: C.blue, color: C.white, fontSize: 14, letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none", borderRadius: 2, fontWeight: 700 }}>
+                  <a href={"mailto:TarabanStudio@gmail.com?subject=" + card.subject} style={{ display: "inline-block", padding: "14px 28px", background: C.blue, color: C.white, fontSize: 16, letterSpacing: "0.08em", textTransform: "uppercase", textDecoration: "none", borderRadius: 2, fontWeight: 700 }}>
                     {card.cta}
                   </a>
                 </div>
@@ -517,7 +545,7 @@ export default function ADAAgent() {
             <Star size={14} color={C.goldDark} />
             <div style={{ flex: 1, height: 1, background: C.border }} />
           </div>
-          <p style={{ fontSize: 14, color: C.textLight, lineHeight: 1.85, letterSpacing: "0.02em", maxWidth: 600, margin: "0 auto" }}>
+          <p style={{ fontSize: 14, color: C.textLight, lineHeight: 1.85, maxWidth: 600, margin: "0 auto" }}>
             This tool scans publicly accessible web pages only. No data is stored or shared. Results are provided for informational purposes and do not constitute legal advice. ADA compliance should be confirmed by a qualified accessibility professional.
           </p>
         </div>
