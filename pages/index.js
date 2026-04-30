@@ -337,11 +337,11 @@ export default function ADAAgent() {
         </p>
       </div>
 
-      <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 28px" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 40px" }}>
 
         {/* Bold intro */}
         <div style={{ textAlign: "center", padding: "48px 20px 40px" }}>
-          <p style={{ fontSize: 22, color: C.text, lineHeight: 1.85, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600, maxWidth: 680, margin: "0 auto" }}>
+          <p style={{ fontSize: 24, color: C.text, lineHeight: 1.85, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600, maxWidth: 820, margin: "0 auto" }}>
             Every website deserves to be experienced by everyone. Enter any URL below to receive a free accessibility score and a page-by-page breakdown of WCAG 2.1 violations.
           </p>
         </div>
@@ -361,7 +361,7 @@ export default function ADAAgent() {
 
           {mode === "url" ? (
             <>
-              <label style={{ display: "block", fontSize: 14, color: C.textLight, marginBottom: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>Website URL</label>
+              <label style={{ display: "block", fontSize: 16, color: C.textLight, marginBottom: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>Website URL</label>
               <div style={{ display: "flex", gap: 12 }}>
                 <input value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => e.key === "Enter" && !loading && runFullAudit()} placeholder="e.g. yourbusiness.com"
                   style={{ flex: 1, padding: "14px 16px", border: "1px solid " + C.border, fontSize: 16, fontFamily: "Georgia, serif", outline: "none", background: C.cream, color: C.text, borderRadius: 2 }} />
@@ -373,10 +373,10 @@ export default function ADAAgent() {
             </>
           ) : (
             <>
-              <label style={{ display: "block", fontSize: 14, color: C.textLight, marginBottom: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>Page Name (optional)</label>
+              <label style={{ display: "block", fontSize: 16, color: C.textLight, marginBottom: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>Page Name (optional)</label>
               <input value={pasteLabel} onChange={e => setPasteLabel(e.target.value)} placeholder="e.g. Home, About, Contact"
                 style={{ width: "100%", padding: "12px 14px", border: "1px solid " + C.border, marginBottom: 18, fontSize: 16, fontFamily: "Georgia, serif", outline: "none", background: C.cream, color: C.text, borderRadius: 2 }} />
-              <label style={{ display: "block", fontSize: 14, color: C.textLight, marginBottom: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>Paste Page Source HTML</label>
+              <label style={{ display: "block", fontSize: 16, color: C.textLight, marginBottom: 10, letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700 }}>Paste Page Source HTML</label>
               <p style={{ fontSize: 16, color: C.textLight, marginBottom: 12, lineHeight: 1.7 }}>
                 On iPhone (Chrome): type <code style={{ background: C.creamDark, padding: "2px 6px", borderRadius: 2, fontSize: 14 }}>view-source:</code> before the URL. On desktop: right-click → View Page Source → Select All → Copy.
               </p>
@@ -399,7 +399,7 @@ export default function ADAAgent() {
                   <div style={{ height: 3, background: C.creamDark, borderRadius: 99, overflow: "hidden" }}>
                     <div style={{ height: "100%", background: C.blue, width: progressPct + "%", transition: "width 0.5s ease" }} />
                   </div>
-                  <div style={{ fontSize: 14, color: C.textLight, marginTop: 6 }}>{progress.current} of {progress.total} pages</div>
+                  <div style={{ fontSize: 16, color: C.textLight, marginTop: 6 }}>{progress.current} of {progress.total} pages</div>
                 </>
               )}
             </div>
@@ -412,7 +412,7 @@ export default function ADAAgent() {
           <div style={{ background: C.blue, border: "1px solid " + C.blueDark, padding: 24, marginBottom: 20, animation: "fadeIn 0.4s ease", display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
             <ScoreRing score={siteScore} size={100} />
             <div style={{ flex: 1, minWidth: 180 }}>
-              <div style={{ fontSize: 12, color: C.gold, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8, fontWeight: 700 }}>{pages.length > 1 ? "Overall Site Score" : "Page Score"}</div>
+              <div style={{ fontSize: 14, color: C.gold, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8, fontWeight: 700 }}>{pages.length > 1 ? "Overall Site Score" : "Page Score"}</div>
               <div style={{ fontSize: 26, fontWeight: 300, color: C.white, marginBottom: 10, fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{pages.length} page{pages.length > 1 ? "s" : ""} audited</div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <span style={{ padding: "4px 12px", fontSize: 16, background: "rgba(255,255,255,0.15)", color: C.white }}>{pages.reduce((s, p) => s + (p.result?.violations?.length || 0), 0)} violations found</span>
@@ -425,7 +425,7 @@ export default function ADAAgent() {
         {/* Pitch */}
         {combinedPitch && (
           <div style={{ background: C.white, border: "1px solid " + C.border, padding: "24px 26px", marginBottom: 20, animation: "fadeIn 0.5s ease" }}>
-            <div style={{ fontSize: 12, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 14, fontWeight: 700 }}>Outreach Pitch</div>
+            <div style={{ fontSize: 14, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 14, fontWeight: 700 }}>Outreach Pitch</div>
             <blockquote style={{ margin: "0 0 16px", padding: "16px 20px", background: C.cream, borderLeft: "3px solid " + C.gold, fontSize: 18, color: C.text, lineHeight: 1.85, fontStyle: "italic", fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 300 }}>"{combinedPitch}"</blockquote>
             <button onClick={() => { navigator.clipboard.writeText(combinedPitch); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
               style={{ padding: "10px 22px", border: "1px solid " + C.blue, background: copied ? C.blue : C.white, color: copied ? C.white : C.blue, fontSize: 16, fontFamily: "Georgia, serif", cursor: "pointer", letterSpacing: "0.08em", textTransform: "uppercase", borderRadius: 2, transition: "all 0.2s", fontWeight: 700 }}>
@@ -486,7 +486,7 @@ export default function ADAAgent() {
           <p style={{ textAlign: "center", color: "rgba(255,255,255,0.65)", fontSize: 18, marginBottom: 36, lineHeight: 1.6 }}>
             Every page is scanned against WCAG 2.1 criteria across eight categories
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 18 }}>
             {auditCategories.map((cat, i) => (
               <div key={i} style={{ background: "rgba(255,255,255,0.08)", padding: "20px 22px", borderLeft: "3px solid " + C.gold }}>
                 <div style={{ fontSize: 18, fontWeight: 700, color: C.white, fontFamily: "Georgia, serif", marginBottom: 8 }}>{cat.title}</div>
@@ -503,7 +503,7 @@ export default function ADAAgent() {
             <span style={{ fontSize: 14, color: C.goldDark, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 700 }}>Ready to Fix What We Find?</span>
             <Star size={16} color={C.goldDark} />
           </div>
-          <p style={{ textAlign: "center", fontSize: 22, color: C.text, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600, lineHeight: 1.85, maxWidth: 560, margin: "0 auto 40px" }}>
+          <p style={{ textAlign: "center", fontSize: 24, color: C.text, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600, lineHeight: 1.85, maxWidth: 680, margin: "0 auto 40px" }}>
             Accessibility work is meaningful — it makes the web more welcoming to everyone. If your audit revealed violations, we offer two ways to help.
           </p>
 
@@ -525,8 +525,8 @@ export default function ADAAgent() {
               },
             ].map((card, i) => (
               <div key={i} style={{ background: C.white, border: "1px solid " + C.border, padding: "28px 26px", display: "flex", flexDirection: "column" }}>
-                <div style={{ fontSize: 12, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 12, fontWeight: 700 }}>{card.label}</div>
-                <h3 style={{ fontSize: 24, fontWeight: 600, color: C.blue, fontFamily: "'Cormorant Garamond', Georgia, serif", marginBottom: 14 }}>{card.title}</h3>
+                <div style={{ fontSize: 14, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 12, fontWeight: 700 }}>{card.label}</div>
+                <h3 style={{ fontSize: 26, fontWeight: 700, color: C.blue, fontFamily: "'Cormorant Garamond', Georgia, serif", marginBottom: 14 }}>{card.title}</h3>
                 <p style={{ fontSize: 16, color: C.text, lineHeight: 1.8, marginBottom: 0, flex: 1 }}>{card.body}</p>
                 <div style={{ marginTop: 28 }}>
                   <a href={"mailto:TarabanStudio@gmail.com?subject=" + card.subject} style={{ display: "inline-block", padding: "14px 28px", background: C.blue, color: C.white, fontSize: 16, letterSpacing: "0.08em", textTransform: "uppercase", textDecoration: "none", borderRadius: 2, fontWeight: 700 }}>
@@ -545,7 +545,7 @@ export default function ADAAgent() {
             <Star size={14} color={C.goldDark} />
             <div style={{ flex: 1, height: 1, background: C.border }} />
           </div>
-          <p style={{ fontSize: 14, color: C.textLight, lineHeight: 1.85, maxWidth: 600, margin: "0 auto" }}>
+          <p style={{ fontSize: 16, color: C.textLight, lineHeight: 1.85, maxWidth: 840, margin: "0 auto" }}>
             This tool scans publicly accessible web pages only. No data is stored or shared. Results are provided for informational purposes and do not constitute legal advice. ADA compliance should be confirmed by a qualified accessibility professional.
           </p>
         </div>
