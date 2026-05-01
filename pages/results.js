@@ -44,7 +44,7 @@ function Star({ size = 20, color = C.gold }) {
 function ScoreRing({ score, size = 90 }) {
   const r = size*0.38, circ = 2*Math.PI*r, dash = (score/100)*circ, color = scoreColor(score), cx=size/2, cy=size/2;
   return (
-    <svg width={size} height={size} viewBox={"0 0 "+size+" "+size}>
+    <svg width={size} height={size} viewBox={"0 0 "+size+" "+size} style={{maxWidth:"100%"}}>
       <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.creamDark} strokeWidth={size*0.08}/>
       <circle cx={cx} cy={cy} r={r} fill="none" stroke={color} strokeWidth={size*0.08}
         strokeDasharray={dash+" "+(circ-dash)} strokeLinecap="round"
@@ -59,7 +59,7 @@ function DonutChart({ data }) {
   if (!data || data.length === 0) return null;
   const total = data.reduce((s, d) => s + d.value, 0);
   if (total === 0) return null;
-  const size = 260, cx = size/2, cy = size/2, r = 100, innerR = 60;
+  const size = 320, cx = size/2, cy = size/2, r = 125, innerR = 75;
   let currentAngle = -Math.PI/2;
   const slices = data.map((d, i) => {
     const pct = d.value / total;
@@ -86,9 +86,9 @@ function DonutChart({ data }) {
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
         <svg width={size} height={size} viewBox={"0 0 "+size+" "+size}>
           {slices.map((s, i) => <path key={i} d={s.path} fill={s.color} stroke={C.cream} strokeWidth="2"/>)}
-          <text x={cx} y={cy-10} textAnchor="middle" fontSize="28" fontWeight="700" fill={C.text} fontFamily="Georgia,serif">{total}</text>
-          <text x={cx} y={cy+14} textAnchor="middle" fontSize="14" fill={C.textLight} fontFamily="Georgia,serif">violations</text>
-          <text x={cx} y={cy+32} textAnchor="middle" fontSize="12" fill={C.textLight} fontFamily="Georgia,serif">across all pages</text>
+          <text x={cx} y={cy-12} textAnchor="middle" fontSize="36" fontWeight="700" fill={C.text} fontFamily="Georgia,serif">{total}</text>
+          <text x={cx} y={cy+16} textAnchor="middle" fontSize="16" fill={C.textLight} fontFamily="Georgia,serif">violations</text>
+          <text x={cx} y={cy+36} textAnchor="middle" fontSize="14" fill={C.textLight} fontFamily="Georgia,serif">across all pages</text>
         </svg>
       </div>
       {/* Two column legend */}
@@ -96,9 +96,9 @@ function DonutChart({ data }) {
         {[...col1, ...col2].map((s, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid "+C.creamDark }}>
             <div style={{ width: 14, height: 14, borderRadius: 3, background: s.color, flexShrink: 0 }}/>
-            <span style={{ fontSize: 15, color: C.text, fontFamily: "Georgia,serif", flex: 1 }}>{s.label}</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: C.textLight }}>{s.count}</span>
-            <span style={{ fontSize: 13, color: C.textLight }}>({s.pct}%)</span>
+            <span style={{ fontSize: 16, color: C.text, fontFamily: "Georgia,serif", flex: 1 }}>{s.label}</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: C.textLight }}>{s.count}</span>
+            <span style={{ fontSize: 14, color: C.textLight }}>({s.pct}%)</span>
           </div>
         ))}
       </div>
@@ -115,10 +115,10 @@ function PageScoreBar({ pages }) {
       {scored.map((p, i) => (
         <div key={i} style={{ marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ fontSize: 15, color: C.text, fontFamily: "Georgia,serif", fontWeight: 600 }}>{p.label}</span>
-            <span style={{ fontSize: 15, fontWeight: 700, color: scoreColor(p.result.score) }}>{p.result.score}/100</span>
+            <span style={{ fontSize: 17, color: C.text, fontFamily: "Georgia,serif", fontWeight: 600 }}>{p.label}</span>
+            <span style={{ fontSize: 17, fontWeight: 700, color: scoreColor(p.result.score) }}>{p.result.score}/100</span>
           </div>
-          <div style={{ height: 10, background: C.creamDark, borderRadius: 99, overflow: "hidden" }}>
+          <div style={{ height: 14, background: C.creamDark, borderRadius: 99, overflow: "hidden" }}>
             <div style={{ height: "100%", width: (p.result.score)+"%", background: scoreColor(p.result.score), borderRadius: 99, transition: "width 1s ease" }}/>
           </div>
         </div>
@@ -130,9 +130,10 @@ function PageScoreBar({ pages }) {
 function classifyPageType(url) {
   const path = url.toLowerCase();
   if (path.includes("/blog/") || path.includes("/news/") || path.includes("/journal/") || path.includes("/post/")) return "blog";
-  if (path.includes("/shop/") || path.includes("/product/") || path.includes("/store/")) return "product";
+  if (path.includes("/p/") || path.includes("/product/") || path.includes("/store/") || path.match(/\/shop\//)) return "product";
   if (path.includes("/privacy") || path.includes("/terms") || path.includes("/legal") || path.includes("/cookie") || path.includes("/policy")) return "policy";
   if (path.includes("/event/") || path.includes("/events/")) return "event";
+  if (path.match(/\/shop$/)) return "web"; // shop landing page = web page
   return "web";
 }
 
@@ -235,7 +236,7 @@ function PageResult({ page, colorMap }) {
       <div onClick={() => setOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 18, padding: "16px 20px", cursor: "pointer" }}>
         <ScoreRing score={page.result?.score ?? 0} size={64}/>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 18, fontWeight: 700, color: C.text, fontFamily: "Georgia,serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{page.label}</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: C.text, fontFamily: "Georgia,serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{page.label}</div>
           <div style={{ fontSize: 14, color: C.textLight, marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{page.url}</div>
           <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
             <span style={{ padding: "3px 10px", borderRadius: 2, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", background: sev.bg, color: sev.color }}>{sev.label}</span>
@@ -348,7 +349,7 @@ export default function Results() {
         {/* Client Summary */}
         <div style={{ background: C.white, border: "1px solid "+C.border, padding: "24px 28px", marginBottom: 24, animation: "fadeIn 0.5s ease", borderRadius: 2 }}>
           <div style={{ fontSize: 13, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 14, fontWeight: 700 }}>Audit Summary</div>
-          <p style={{ margin: "0 0 16px", fontSize: 18, color: C.text, lineHeight: 1.85, fontFamily: "'Cormorant Garamond',Georgia,serif", fontWeight: 400 }}>{clientSummary}</p>
+          <p style={{ margin: "0 0 16px", fontSize: 20, color: C.text, lineHeight: 1.85, fontFamily: "'Cormorant Garamond',Georgia,serif", fontWeight: 400 }}>{clientSummary}</p>
           <p style={{ margin: 0, fontSize: 15, color: C.textLight, fontStyle: "italic" }}>
             The free audit shows what categories of issues exist. The full paid report shows exactly where they are and how to fix them.
           </p>
@@ -356,14 +357,14 @@ export default function Results() {
 
         {/* Site Profile */}
         <div style={{ background: C.white, border: "1px solid "+C.border, padding: "24px 28px", marginBottom: 24, borderRadius: 2 }}>
-          <div style={{ fontSize: 13, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 20, fontWeight: 700 }}>Site Profile</div>
+          <div style={{ fontSize: 14, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 20, fontWeight: 700 }}>Site Profile</div>
           
-          {/* Page type breakdown */}
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 15, color: C.text, fontWeight: 700, marginBottom: 12, fontFamily: "Georgia,serif" }}>
+          {/* Page type breakdown - editorial circles */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 13, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 700, marginBottom: 20 }}>
               {totalPageCount} total pages found in sitemap
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 24, alignItems: "flex-start" }}>
               {[
                 { label: "Web Pages", value: siteProfile.webPages },
                 { label: "Blog Posts", value: siteProfile.blogPosts },
@@ -371,9 +372,17 @@ export default function Results() {
                 { label: "Policy Pages", value: siteProfile.policyPages },
                 { label: "Event Pages", value: siteProfile.eventPages },
               ].filter(s => s.value > 0).map((stat, i) => (
-                <div key={i} style={{ padding: "10px 16px", background: C.cream, border: "1px solid "+C.border, borderRadius: 3, textAlign: "center", minWidth: 100 }}>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: C.blue, fontFamily: "'Cormorant Garamond',Georgia,serif" }}>{stat.value}</div>
-                  <div style={{ fontSize: 13, color: C.textLight, marginTop: 2 }}>{stat.label}</div>
+                <div key={i} style={{ textAlign: "center", minWidth: 90 }}>
+                  <div style={{
+                    width: 90, height: 90, borderRadius: "50%",
+                    border: "2px solid "+C.border,
+                    background: C.cream,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    margin: "0 auto 10px",
+                  }}>
+                    <span style={{ fontSize: 36, fontWeight: 600, color: C.blue, fontFamily: "'Cormorant Garamond',Georgia,serif", lineHeight: 1 }}>{stat.value}</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: C.textLight, lineHeight: 1.3 }}>{stat.label}</div>
                 </div>
               ))}
             </div>
@@ -406,15 +415,15 @@ export default function Results() {
         {violationByCategory.length > 0 && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 20, marginBottom: 24, animation: "fadeIn 0.6s ease" }}>
             <div style={{ background: C.white, border: "1px solid "+C.border, padding: "28px 28px", borderRadius: 2 }}>
-              <div style={{ fontSize: 13, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 6, fontWeight: 700 }}>Violation Breakdown</div>
-              <p style={{ fontSize: 14, color: C.textLight, margin: "0 0 20px", lineHeight: 1.6 }}>
+              <div style={{ fontSize: 14, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 6, fontWeight: 700 }}>Violation Breakdown</div>
+              <p style={{ fontSize: 16, color: C.textLight, margin: "0 0 20px", lineHeight: 1.6 }}>
                 The types of accessibility issues found across all audited pages, ranked by frequency.
               </p>
               <DonutChart data={violationByCategory}/>
             </div>
             <div style={{ background: C.white, border: "1px solid "+C.border, padding: "28px 28px", borderRadius: 2 }}>
-              <div style={{ fontSize: 13, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 6, fontWeight: 700 }}>Page Compliance Scores</div>
-              <p style={{ fontSize: 14, color: C.textLight, margin: "0 0 20px", lineHeight: 1.6 }}>
+              <div style={{ fontSize: 14, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 6, fontWeight: 700 }}>Page Compliance Scores</div>
+              <p style={{ fontSize: 16, color: C.textLight, margin: "0 0 20px", lineHeight: 1.6 }}>
                 Each page scored 0–100. Higher is better. Pages scoring below 60 have significant accessibility barriers.
               </p>
               <PageScoreBar pages={pages}/>
@@ -424,7 +433,7 @@ export default function Results() {
 
         {/* Page Results */}
         <div style={{ marginBottom: 48, animation: "fadeIn 0.3s ease" }}>
-          <div style={{ fontSize: 13, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid "+C.border, fontWeight: 700 }}>
+          <div style={{ fontSize: 15, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 14, paddingBottom: 10, borderBottom: "1px solid "+C.border, fontWeight: 700 }}>
             Page-by-Page Results
           </div>
           <p style={{ fontSize: 15, color: C.textLight, margin: "0 0 16px", lineHeight: 1.7 }}>
