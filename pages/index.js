@@ -26,13 +26,13 @@ const oppConfig = {
   low:    { label: "Minor Issues",    color: "#5a6a6f", bg: "#f5f5f5" },
 };
 
-const CHART_COLORS = ["#4a7a8a","#e8c96a","#d97020","#208050","#8b4a12","#6a9aaa","#c8a94a","#cc2222"];
+const CHART_COLORS = ["#6b8fb5","#e8d878","#7ab0a8","#8fa8cc","#c8a94a","#8aaa8a","#4a6a8a","#f0ead8"];
 
 function scoreColor(s) {
-  if (s >= 80) return "#208050";
-  if (s >= 60) return "#b07020";
-  if (s >= 40) return "#d97020";
-  return "#cc2222";
+  if (s >= 80) return "#7ab0a8";
+  if (s >= 60) return "#c8a94a";
+  if (s >= 40) return "#b07020";
+  return "#8a4a4a";
 }
 
 function Star({ size = 20, color = C.gold }) {
@@ -127,37 +127,59 @@ function PageScoreBar({ pages }) {
   );
 }
 
+// Page type classifier
+function classifyPageType(url) {
+  const path = url.toLowerCase();
+  if (path.includes("/blog/") || path.includes("/news/") || path.includes("/journal/") || path.includes("/post/") || path.includes("/article/")) return "blog";
+  if (path.includes("/shop/") || path.includes("/product/") || path.includes("/store/") || path.includes("/buy/")) return "product";
+  if (path.includes("/privacy") || path.includes("/terms") || path.includes("/legal") || path.includes("/cookie") || path.includes("/policy")) return "policy";
+  if (path.includes("/event/") || path.includes("/events/") || path.includes("/calendar/")) return "event";
+  return "web";
+}
+
 // Site profile analyzer
-function analyzeSiteProfile(pages, totalPageCount) {
-  let images = 0, pdfs = 0, videos = 0, forms = 0, maps = 0;
+function analyzeSiteProfile(pages, totalPageCount, allPageUrls) {
+  let pdfs = 0, videos = 0, forms = 0;
+  let webPages = 0, blogPosts = 0, productPages = 0, policyPages = 0, eventPages = 0;
+
+  // Count page types from full sitemap urls
+  if (allPageUrls && allPageUrls.length > 0) {
+    allPageUrls.forEach(url => {
+      const type = classifyPageType(url);
+      if (type === "blog") blogPosts++;
+      else if (type === "product") productPages++;
+      else if (type === "policy") policyPages++;
+      else if (type === "event") eventPages++;
+      else webPages++;
+    });
+  } else {
+    webPages = totalPageCount;
+  }
+
   pages.forEach(p => {
     if (!p.result) return;
     pdfs += p.result.pdfCount || 0;
-    // Count from violations and summary hints
-    const summary = (p.result.summary || "").toLowerCase();
     const violations = p.result.violations || [];
     violations.forEach(v => {
       const cat = (v.category || "").toLowerCase();
-      if (cat.includes("image")) images += 3; // estimate
       if (cat.includes("video") || cat.includes("media")) videos += 1;
       if (cat.includes("form")) forms += 1;
-      if (cat.includes("map")) maps += 1;
     });
   });
 
   // Tier recommendation based on page count
   let tier, tierPrice, tierDesc;
   if (totalPageCount <= 10) {
-    tier = "Starter"; tierPrice = "$19.99"; tierDesc = "Up to 10 pages";
+    tier = "Core"; tierPrice = "$47"; tierDesc = "Up to 10 pages";
   } else if (totalPageCount <= 25) {
-    tier = "Standard"; tierPrice = "$34.99"; tierDesc = "Up to 25 pages";
+    tier = "Standard"; tierPrice = "$92"; tierDesc = "Up to 25 pages";
   } else if (totalPageCount <= 50) {
-    tier = "Professional"; tierPrice = "$59.99"; tierDesc = "Up to 50 pages";
+    tier = "Comprehensive"; tierPrice = "$182"; tierDesc = "Up to 50 pages";
   } else {
-    tier = "Enterprise"; tierPrice = "Custom Quote"; tierDesc = "50+ pages";
+    tier = "Enterprise"; tierPrice = "Custom Quote"; tierDesc = "50+ pages — contact for pricing";
   }
 
-  return { images: Math.max(images, 0), pdfs, videos, forms, maps, tier, tierPrice, tierDesc, totalPageCount };
+  return { pdfs, videos, forms, webPages, blogPosts, productPages, policyPages, eventPages, tier, tierPrice, tierDesc, totalPageCount };
 }
 
 function groupViolations(violations) {
@@ -302,6 +324,7 @@ export default function ADAAgent() {
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [pages, setPages] = useState([]);
   const [totalPageCount, setTotalPageCount] = useState(0);
+  const [allPageUrls, setAllPageUrls] = useState([]);
   const [siteScore, setSiteScore] = useState(null);
   const [totalPdfs, setTotalPdfs] = useState(0);
   const [error, setError] = useState("");
@@ -309,7 +332,7 @@ export default function ADAAgent() {
   const [combinedPitch, setCombinedPitch] = useState("");
   const abortRef = useRef(false);
 
-  function resetResults() { setError(""); setPages([]); setSiteScore(null); setTotalPdfs(0); setCombinedPitch(""); setTotalPageCount(0); }
+  function resetResults() { setError(""); setPages([]); setSiteScore(null); setTotalPdfs(0); setCombinedPitch(""); setTotalPageCount(0); setAllPageUrls([]); }
 
   async function runPasteAudit() {
     if (!pastedHtml.trim()) return;
@@ -341,6 +364,7 @@ export default function ADAAgent() {
     // Store total page count from sitemap before filtering
     const fullPageCount = pageUrls.length;
     setTotalPageCount(fullPageCount);
+    setAllPageUrls([...pageUrls]);
 
     const skipPatterns = ["divider","sonora","light-life","living-book","resplendent","folder","config","cart","account","search"];
     pageUrls = pageUrls.filter(u => !skipPatterns.some(p => u.toLowerCase().includes(p)));
@@ -380,7 +404,7 @@ export default function ADAAgent() {
     allViolations.reduce((acc, v) => { acc[v.category] = (acc[v.category]||0)+1; return acc; }, {})
   ).map(([label, value]) => ({ label, value })).sort((a,b) => b.value-a.value).slice(0,6);
 
-  const siteProfile = pages.length > 0 ? analyzeSiteProfile(pages, totalPageCount) : null;
+  const siteProfile = pages.length > 0 ? analyzeSiteProfile(pages, totalPageCount, allPageUrls) : null;
 
   const auditCategories = [
     { title: "Images, Charts & Maps", desc: "Missing or empty alt text, decorative images not properly hidden, charts and maps without text alternatives" },
@@ -478,6 +502,9 @@ export default function ADAAgent() {
             </div>
           )}
           {error && <div style={{ marginTop: 14, padding: "12px 16px", background: "#fef2f2", border: "1px solid #f5b8b8", borderRadius: 2, fontSize: 17, color: "#8b1a1a" }}>{error}</div>}
+          <p style={{ marginTop: 14, fontSize: 14, color: C.textLight, lineHeight: 1.7 }}>
+            Works on any public website. Password-protected sites, pages behind a login, or sites that block automated requests cannot be audited.
+          </p>
         </div>
 
         {/* Overall score */}
@@ -486,7 +513,14 @@ export default function ADAAgent() {
             <ScoreRing score={siteScore} size={110}/>
             <div style={{ flex: 1, minWidth: 200 }}>
               <div style={{ fontSize: 14, color: C.gold, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 8, fontWeight: 700 }}>{pages.length > 1?"Overall Site Score":"Page Score"}</div>
-              <div style={{ fontSize: 28, fontWeight: 300, color: C.white, marginBottom: 10, fontFamily: "'Cormorant Garamond',Georgia,serif" }}>{pages.length} page{pages.length>1?"s":""} audited</div>
+              <div style={{ fontSize: 28, fontWeight: 300, color: C.white, marginBottom: 10, fontFamily: "'Cormorant Garamond',Georgia,serif" }}>
+                {pages.length} of {totalPageCount > pages.length ? totalPageCount : pages.length} page{pages.length>1?"s":""} audited
+              </div>
+              {totalPageCount > pages.length && (
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", marginBottom: 8 }}>
+                  Full {totalPageCount}-page audit available in paid report
+                </div>
+              )}
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <span style={{ padding: "5px 14px", fontSize: 16, background: "rgba(255,255,255,0.15)", color: C.white }}>{allViolations.length} violations found</span>
                 {totalPdfs > 0 && <span style={{ padding: "5px 14px", fontSize: 16, background: "rgba(232,201,106,0.2)", color: C.gold, fontWeight: 700 }}>{totalPdfs} PDF{totalPdfs>1?"s":""} detected</span>}
@@ -499,19 +533,37 @@ export default function ADAAgent() {
         {siteProfile && (
           <div style={{ background: C.white, border: "1px solid "+C.border, padding: "24px 28px", marginBottom: 20, animation: "fadeIn 0.5s ease" }}>
             <div style={{ fontSize: 14, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: 16, fontWeight: 700 }}>Site Profile</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16, marginBottom: 24 }}>
-              {[
-                { label: "Total Pages", value: siteProfile.totalPageCount, icon: "📄" },
-                { label: "PDFs Found", value: siteProfile.pdfs, icon: "📎" },
-                { label: "Videos", value: siteProfile.videos, icon: "🎥" },
-                { label: "Forms", value: siteProfile.forms, icon: "📝" },
-              ].map((stat, i) => (
-                <div key={i} style={{ textAlign: "center", padding: "16px 12px", background: C.cream, borderRadius: 4, border: "1px solid "+C.border }}>
-                  <div style={{ fontSize: 28 }}>{stat.icon}</div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: C.blue, fontFamily: "'Cormorant Garamond',Georgia,serif", marginTop: 4 }}>{stat.value}</div>
-                  <div style={{ fontSize: 14, color: C.textLight, marginTop: 4 }}>{stat.label}</div>
+            {/* Page type breakdown */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 13, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 700, marginBottom: 12 }}>Page Breakdown</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10, marginBottom: 16 }}>
+                {[
+                  { label: "Web Pages", value: siteProfile.webPages, show: siteProfile.webPages > 0 },
+                  { label: "Blog Posts", value: siteProfile.blogPosts, show: siteProfile.blogPosts > 0 },
+                  { label: "Products", value: siteProfile.productPages, show: siteProfile.productPages > 0 },
+                  { label: "Policy Pages", value: siteProfile.policyPages, show: siteProfile.policyPages > 0 },
+                  { label: "Event Pages", value: siteProfile.eventPages, show: siteProfile.eventPages > 0 },
+                ].filter(s => s.show).map((stat, i) => (
+                  <div key={i} style={{ textAlign: "center", padding: "14px 10px", background: C.cream, borderRadius: 3, border: "1px solid "+C.border }}>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: C.blue, fontFamily: "'Cormorant Garamond',Georgia,serif" }}>{stat.value}</div>
+                    <div style={{ fontSize: 13, color: C.textLight, marginTop: 4 }}>{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <div style={{ padding: "8px 14px", background: C.cream, border: "1px solid "+C.border, borderRadius: 3, fontSize: 14, color: C.text }}>
+                  <strong>{siteProfile.totalPageCount}</strong> total pages in sitemap
                 </div>
-              ))}
+                {siteProfile.pdfs > 0 && <div style={{ padding: "8px 14px", background: "#fff8f0", border: "1px solid #f5c896", borderRadius: 3, fontSize: 14, color: "#8b4a12" }}>
+                  <strong>{siteProfile.pdfs}</strong> PDFs detected — quoted separately
+                </div>}
+                {siteProfile.videos > 0 && <div style={{ padding: "8px 14px", background: C.cream, border: "1px solid "+C.border, borderRadius: 3, fontSize: 14, color: C.text }}>
+                  <strong>{siteProfile.videos}</strong> videos found
+                </div>}
+                {siteProfile.forms > 0 && <div style={{ padding: "8px 14px", background: C.cream, border: "1px solid "+C.border, borderRadius: 3, fontSize: 14, color: C.text }}>
+                  <strong>{siteProfile.forms}</strong> forms found
+                </div>}
+              </div>
             </div>
 
             {/* Tier recommendation */}
@@ -522,6 +574,7 @@ export default function ADAAgent() {
                   {siteProfile.tier} — {siteProfile.tierPrice}
                 </div>
                 <div style={{ fontSize: 15, color: "rgba(255,255,255,0.65)", marginTop: 2 }}>{siteProfile.tierDesc}</div>
+                <div style={{ fontSize: 13, color: "rgba(232,201,106,0.8)", marginTop: 8, fontStyle: "italic" }}>Average ADA lawsuit settlement: $25,000–$75,000. A full report starts at $47.</div>
               </div>
               <a href={"mailto:TarabanStudio@gmail.com?subject=ADA Report Request - "+siteProfile.tier} style={{ display: "inline-block", padding: "12px 24px", background: C.gold, color: C.blueDark, fontSize: 16, letterSpacing: "0.08em", textTransform: "uppercase", textDecoration: "none", borderRadius: 2, fontWeight: 700, whiteSpace: "nowrap" }}>
                 Get My Report
@@ -618,7 +671,7 @@ export default function ADAAgent() {
         </div>
 
         {/* Services */}
-        <div style={{ background: C.creamDark, padding: "52px 48px", marginBottom: 48 }}>
+        <div style={{ background: C.cream, padding: "52px 48px", marginBottom: 48, border: "1px solid "+C.border }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 20 }}>
             <Star size={16} color={C.goldDark}/>
             <span style={{ fontSize: 14, color: C.goldDark, letterSpacing: "0.2em", textTransform: "uppercase", fontWeight: 700 }}>Ready to Fix What We Find?</span>
