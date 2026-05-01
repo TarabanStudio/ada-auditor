@@ -116,7 +116,7 @@ export default function Landing() {
     const fullPageCount = pageUrls.length;
     const allPageUrls = [...pageUrls];
     const skipPatterns = ["divider","sonora","light-life","living-book","resplendent","folder","config","cart","account","search"];
-    pageUrls = pageUrls.filter(u => !skipPatterns.some(p => u.toLowerCase().includes(p))).slice(0, 10);
+    pageUrls = pageUrls.filter(u => !skipPatterns.some(p => u.toLowerCase().includes(p))).slice(0, 2);
     setProgress({ current: 0, total: pageUrls.length });
     const results = [];
     for (let i = 0; i < pageUrls.length; i++) {
