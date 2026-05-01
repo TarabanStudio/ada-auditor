@@ -60,7 +60,7 @@ export default async function handler(req, res) {
         model: "claude-haiku-4-5-20251001",
         max_tokens: 4000,
         system: AUDIT_SYSTEM_PROMPT,
-        messages: [{ role: "user", content: "Audit this HTML from \"" + (label || "Unknown page") + "\":\n\n" + html.slice(0, 20000) }],
+        messages: [{ role: "user", content: "Audit this HTML from \"" + (label || "Unknown page") + "\":\n\n" + html.slice(0, 40000) }],
       }),
     });
 
